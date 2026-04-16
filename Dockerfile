@@ -1,10 +1,10 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache libc6-compat openssl
-# postinstall 会执行 prisma generate，须提供占位 URL（generate 不连库）
 ARG DATABASE_URL=file:./prisma/data.db
 ENV DATABASE_URL=$DATABASE_URL
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma
 RUN npm ci
 
 FROM node:20-alpine AS builder
