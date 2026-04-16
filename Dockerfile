@@ -25,6 +25,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8080
 ENV HOSTNAME=0.0.0.0
+ENV DATABASE_URL=file:./prisma/data.db
 RUN apk add --no-cache libc6-compat openssl
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 

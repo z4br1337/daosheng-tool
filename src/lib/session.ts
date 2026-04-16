@@ -46,7 +46,11 @@ export type AuthContext =
   | { ok: false };
 
 export async function readAuthContext(): Promise<AuthContext> {
-  const session = await getSession();
-  if (!session.userId || !session.classId || !session.role) return { ok: false };
-  return { ok: true, userId: session.userId, classId: session.classId, role: session.role };
+  try {
+    const session = await getSession();
+    if (!session.userId || !session.classId || !session.role) return { ok: false };
+    return { ok: true, userId: session.userId, classId: session.classId, role: session.role };
+  } catch {
+    return { ok: false };
+  }
 }
