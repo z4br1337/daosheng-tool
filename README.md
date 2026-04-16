@@ -43,7 +43,7 @@ npm run dev
 
 | 变量 | 必填 | 说明 |
 |---|---|---|
-| `DATABASE_URL` | 是 | 数据库连接串，默认 `file:./prisma/data.db` |
+| `DATABASE_URL` | 是 | 数据库连接串。本地默认 `file:./prisma/data.db`；Docker 镜像默认 `file:/app/prisma/data.db`（绝对路径，避免 SQLite 无法打开文件） |
 | `SESSION_SECRET` | 是 | iron-session 加密密钥，≥32 字符 |
 | `ARK_API_KEY` | 是 | 火山方舟 API Key（Bearer 令牌） |
 | `ARK_BASE_URL` | 否 | 方舟端点，默认 `https://ark.cn-beijing.volces.com/api/v3` |
@@ -54,5 +54,5 @@ npm run dev
 1. 将仓库推送至 GitHub，在 Zeabur 绑定仓库并创建服务
 2. 在服务环境变量中填入上表所有必填项
 3. Zeabur 会自动检测 Dockerfile 并构建部署，暴露 8080 端口
-4. 为 `/app/prisma` 挂载持久卷以保留 SQLite 数据
+4. **持久卷**：推荐挂到例如 `/data` 并设置 `DATABASE_URL=file:/data/data.db`。若挂到 `/app/prisma`，空卷会遮住镜像内的 `schema.prisma`，启动脚本会自动改用镜像内副本执行 `db push`；请确保该目录对运行用户可写
 5. 如果希望使用 Zeabur 原生 Node 构建（而非 Docker），设置环境变量 `ZBPACK_IGNORE_DOCKERFILE=true`
