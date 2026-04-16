@@ -2,6 +2,8 @@ import { AdminUserList } from "@/components/AdminUserList";
 import { readAuthContext } from "@/lib/session";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminPage() {
   const ctx = await readAuthContext();
   if (!ctx.ok || ctx.role !== "ADMIN") redirect("/app");

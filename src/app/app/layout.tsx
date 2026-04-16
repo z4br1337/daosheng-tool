@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { readAuthContext } from "@/lib/session";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function AppAreaLayout({ children }: { children: React.ReactNode }) {
   const ctx = await readAuthContext();
   if (!ctx.ok) redirect("/");

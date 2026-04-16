@@ -13,6 +13,15 @@ function sessionSecret(): string {
   if (process.env.NODE_ENV === "development") {
     return "dev-only-32-char-secret-key!!!!!";
   }
+  // Docker 构建阶段常为 production 且无 SESSION_SECRET。预渲染可能在子进程执行，此时
+  // NEXT_PHASE 不一定存在，但 Next 会为静态/预渲染 worker 设置 IS_NEXT_WORKER。
+  const inNextBuildPipeline =
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.IS_NEXT_WORKER === "true" ||
+    process.env.NEXT_PRIVATE_BUILD_WORKER === "1";
+  if (inNextBuildPipeline) {
+    return "x".repeat(32);
+  }
   throw new Error("SESSION_SECRET 未设置或长度不足 32 字符");
 }
 

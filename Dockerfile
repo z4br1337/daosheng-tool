@@ -1,6 +1,9 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache libc6-compat openssl
+# postinstall 会执行 prisma generate，须提供占位 URL（generate 不连库）
+ARG DATABASE_URL=file:./prisma/data.db
+ENV DATABASE_URL=$DATABASE_URL
 COPY package.json package-lock.json* ./
 RUN npm ci
 
@@ -12,7 +15,9 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG DATABASE_URL=file:./prisma/data.db
 ENV DATABASE_URL=$DATABASE_URL
-RUN npx prisma generate
+# 构建期占位，避免预渲染/子进程未继承检测变量时失败；运行环境仍须配置 ≥32 字符真实值
+ARG SESSION_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ENV SESSION_SECRET=$SESSION_SECRET
 RUN npm run build
 
 FROM node:20-alpine AS runner

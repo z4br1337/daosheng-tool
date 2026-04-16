@@ -47,7 +47,7 @@ export async function POST(_req: NextRequest, ctx: RouteContext) {
       },
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "分析失败";
-    return NextResponse.json({ error: msg }, { status: 502 });
+    console.error("[analyze]", e);
+    return NextResponse.json({ error: "模型调用失败，请稍后重试" }, { status: 502 });
   }
 }

@@ -1,6 +1,7 @@
 import { ADMIN_STUDENT_NO, ensureDefaultClass } from "@/lib/bootstrap";
 import { hashPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
+import { clientIpFromRequest, rateLimit } from "@/lib/rate-limit";
 import { getSession } from "@/lib/session";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -12,6 +13,15 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const ip = clientIpFromRequest(req);
+  const limited = rateLimit(`register:${ip}`, 10, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: `注册尝试过多，请 ${limited.retryAfterSec} 秒后再试` },
+      { status: 429 },
+    );
+  }
+
   let json: unknown;
   try {
     json = await req.json();
