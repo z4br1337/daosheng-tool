@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 const bodySchema = z.object({
-  text: z.string(),
+  text: z.string().max(100_000),
 });
 
 export async function POST(req: NextRequest) {
@@ -33,13 +33,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "文本中没有姓名" }, { status: 400 });
   }
 
+  const existing = await prisma.student.findMany({
+    where: { classId: ctx.classId, name: { in: unique } },
+    select: { name: true },
+  });
+  const existingNames = new Set(existing.map((s) => s.name));
+  const toCreate = unique.filter((n) => !existingNames.has(n));
+
+  if (toCreate.length === 0) {
+    return NextResponse.json({ error: "所有姓名已存在，无新增" }, { status: 409 });
+  }
+
   const created = await prisma.$transaction(
-    unique.map((name) =>
+    toCreate.map((name) =>
       prisma.student.create({
         data: { classId: ctx.classId, name },
       }),
     ),
   );
 
-  return NextResponse.json({ ok: true, created: created.length });
+  const skipped = unique.length - toCreate.length;
+  return NextResponse.json({ ok: true, created: created.length, skipped });
 }

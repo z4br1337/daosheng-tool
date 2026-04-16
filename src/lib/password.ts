@@ -10,8 +10,17 @@ export function hashPassword(plain: string): string {
 }
 
 export function verifyPassword(plain: string, stored: string): boolean {
-  const [salt, key] = stored.split(":");
-  if (!salt || !key) return false;
-  const derived = scryptSync(plain, salt, KEY_LEN);
-  return timingSafeEqual(Buffer.from(key, "hex"), derived);
+  const idx = stored.indexOf(":");
+  if (idx < 1) return false;
+  const salt = stored.slice(0, idx);
+  const key = stored.slice(idx + 1);
+  if (!key) return false;
+  try {
+    const keyBuf = Buffer.from(key, "hex");
+    const derived = scryptSync(plain, salt, KEY_LEN);
+    if (keyBuf.length !== derived.length) return false;
+    return timingSafeEqual(keyBuf, derived);
+  } catch {
+    return false;
+  }
 }

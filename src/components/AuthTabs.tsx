@@ -99,14 +99,12 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
   const [studentNo, setStudentNo] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
-  const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setMsg(null);
     setLoading(true);
     try {
       const res = await fetch("/api/auth/register", {
@@ -139,7 +137,6 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
       <InputField label="姓名" value={name} onChange={setName} placeholder="你的真实姓名" />
       <InputField label="密码" value={password} onChange={setPassword} placeholder="至少 6 位" type="password" />
       {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
-      {msg ? <p className="text-sm text-emerald-600 dark:text-emerald-400">{msg}</p> : null}
       <button
         type="submit"
         disabled={loading}

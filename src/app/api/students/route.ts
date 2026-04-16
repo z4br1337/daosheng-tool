@@ -58,8 +58,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "没有有效的姓名" }, { status: 400 });
   }
 
+  const existing = await prisma.student.findMany({
+    where: { classId: ctx.classId, name: { in: cleaned } },
+    select: { name: true },
+  });
+  const existingNames = new Set(existing.map((s) => s.name));
+  const toCreate = cleaned.filter((n) => !existingNames.has(n));
+
+  if (toCreate.length === 0) {
+    return NextResponse.json({ error: "所有姓名已存在" }, { status: 409 });
+  }
+
   const created = await prisma.$transaction(
-    cleaned.map((name) =>
+    toCreate.map((name) =>
       prisma.student.create({
         data: { classId: ctx.classId, name },
       }),
@@ -69,6 +80,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     created: created.length,
+    skipped: cleaned.length - toCreate.length,
     students: created.map((s) => ({ id: s.id, name: s.name })),
   });
 }
