@@ -64,7 +64,13 @@ function LoginForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ studentNo, password }),
       });
-      const data = (await res.json()) as { error?: string };
+      let data: { error?: string };
+      try {
+        data = await res.json();
+      } catch {
+        setError(`服务器返回异常 (${res.status})`);
+        return;
+      }
       if (!res.ok) {
         setError(data.error ?? "登录失败");
         return;
@@ -72,7 +78,7 @@ function LoginForm() {
       router.push("/app");
       router.refresh();
     } catch {
-      setError("网络错误");
+      setError("网络连接失败，请检查网络后重试");
     } finally {
       setLoading(false);
     }
@@ -112,7 +118,13 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ studentNo, name, password }),
       });
-      const data = (await res.json()) as { error?: string; needApproval?: boolean; message?: string };
+      let data: { error?: string; needApproval?: boolean; message?: string };
+      try {
+        data = await res.json();
+      } catch {
+        setError(`服务器返回异常 (${res.status})`);
+        return;
+      }
       if (!res.ok) {
         setError(data.error ?? "注册失败");
         return;
@@ -125,7 +137,7 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
         router.refresh();
       }
     } catch {
-      setError("网络错误");
+      setError("网络连接失败，请检查网络后重试");
     } finally {
       setLoading(false);
     }

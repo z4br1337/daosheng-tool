@@ -13,59 +13,65 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const ip = clientIpFromRequest(req);
-  const limited = rateLimit(`register:${ip}`, 10, 60 * 60 * 1000);
-  if (!limited.ok) {
-    return NextResponse.json(
-      { error: `注册尝试过多，请 ${limited.retryAfterSec} 秒后再试` },
-      { status: 429 },
-    );
-  }
-
-  let json: unknown;
   try {
-    json = await req.json();
-  } catch {
-    return NextResponse.json({ error: "请求体无效" }, { status: 400 });
-  }
+    const ip = clientIpFromRequest(req);
+    const limited = rateLimit(`register:${ip}`, 10, 60 * 60 * 1000);
+    if (!limited.ok) {
+      return NextResponse.json(
+        { error: `注册尝试过多，请 ${limited.retryAfterSec} 秒后再试` },
+        { status: 429 },
+      );
+    }
 
-  const parsed = bodySchema.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "参数错误：学号和姓名不能为空，密码至少 6 位" }, { status: 400 });
-  }
+    let json: unknown;
+    try {
+      json = await req.json();
+    } catch {
+      return NextResponse.json({ error: "请求体无效" }, { status: 400 });
+    }
 
-  const { studentNo, name, password } = parsed.data;
+    const parsed = bodySchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "参数错误：学号和姓名不能为空，密码至少 6 位" }, { status: 400 });
+    }
 
-  const existing = await prisma.user.findUnique({ where: { studentNo } });
-  if (existing) {
-    return NextResponse.json({ error: "该学号已注册" }, { status: 409 });
-  }
+    const { studentNo, name, password } = parsed.data;
 
-  const isAdmin = studentNo === ADMIN_STUDENT_NO;
-  const user = await prisma.user.create({
-    data: {
-      studentNo,
-      name,
-      passwordHash: hashPassword(password),
-      role: isAdmin ? "ADMIN" : "USER",
-      approved: isAdmin,
-    },
-  });
+    const existing = await prisma.user.findUnique({ where: { studentNo } });
+    if (existing) {
+      return NextResponse.json({ error: "该学号已注册" }, { status: 409 });
+    }
 
-  const cls = await ensureDefaultClass();
-  const session = await getSession();
-  session.userId = user.id;
-  session.classId = cls.id;
-  session.role = user.role;
-  await session.save();
-
-  if (!isAdmin) {
-    return NextResponse.json({
-      ok: true,
-      needApproval: true,
-      message: "注册成功，请等待管理员审批后方可使用。",
+    const isAdmin = studentNo === ADMIN_STUDENT_NO;
+    const user = await prisma.user.create({
+      data: {
+        studentNo,
+        name,
+        passwordHash: hashPassword(password),
+        role: isAdmin ? "ADMIN" : "USER",
+        approved: isAdmin,
+      },
     });
-  }
 
-  return NextResponse.json({ ok: true, needApproval: false });
+    const cls = await ensureDefaultClass();
+    const session = await getSession();
+    session.userId = user.id;
+    session.classId = cls.id;
+    session.role = user.role;
+    await session.save();
+
+    if (!isAdmin) {
+      return NextResponse.json({
+        ok: true,
+        needApproval: true,
+        message: "注册成功，请等待管理员审批后方可使用。",
+      });
+    }
+
+    return NextResponse.json({ ok: true, needApproval: false });
+  } catch (e) {
+    console.error("[register]", e);
+    const msg = e instanceof Error ? e.message : "未知错误";
+    return NextResponse.json({ error: `服务器错误：${msg}` }, { status: 500 });
+  }
 }
