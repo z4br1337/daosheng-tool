@@ -37,7 +37,10 @@ export async function POST(req: NextRequest) {
 
     const { studentNo, name, password } = parsed.data;
 
-    const existing = await prisma.user.findUnique({ where: { studentNo } });
+    const existing = await prisma.user.findUnique({
+      where: { studentNo },
+      select: { id: true },
+    });
     if (existing) {
       return NextResponse.json({ error: "该学号已注册" }, { status: 409 });
     }

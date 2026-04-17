@@ -11,7 +11,10 @@ export async function GET() {
     const students = await prisma.student.findMany({
       where: { classId: ctx.classId },
       orderBy: { createdAt: "asc" },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        studentNo: true,
         _count: { select: { records: true, analyses: true } },
       },
     });

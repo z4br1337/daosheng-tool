@@ -6,7 +6,10 @@ export function SimpleWordCloud({ items }: { items: { text: string; value: numbe
       <p className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">暂无足够文本生成词云</p>
     );
   }
-  const max = Math.max(...items.map((i) => i.value), 1);
+  let max = 1;
+  for (const i of items) {
+    if (i.value > max) max = i.value;
+  }
   return (
     <div className="flex min-h-[220px] flex-wrap content-center items-center justify-center gap-3 p-4">
       {items.map((w) => {

@@ -31,14 +31,15 @@ function normalizeSqliteDatabaseUrl(): void {
   process.env.DATABASE_URL = `file:${base}/${relative}${query}`;
 }
 
-normalizeSqliteDatabaseUrl();
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
-
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
+function createClient(): PrismaClient {
+  normalizeSqliteDatabaseUrl();
+  return new PrismaClient({
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
+}
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+/** 全环境单例，避免热重载或重复 import 时多开 SQLite 连接 */
+export const prisma = globalForPrisma.prisma ?? createClient();
+globalForPrisma.prisma = prisma;

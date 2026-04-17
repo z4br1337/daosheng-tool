@@ -38,10 +38,12 @@ export type HighlightSegment =
 
 export function highlightSegments(text: string, issues: AiIssue[]): HighlightSegment[] {
   if (!text) return [];
-  const phrases = issues
-    .map((i) => i.phrase.trim())
-    .filter(Boolean)
-    .sort((a, b) => b.length - a.length);
+  const levelByPhrase = new Map<string, AiIssue["level"]>();
+  for (const i of issues) {
+    const p = i.phrase.trim();
+    if (p) levelByPhrase.set(p, i.level);
+  }
+  const phrases = [...levelByPhrase.keys()].sort((a, b) => b.length - a.length);
 
   if (phrases.length === 0) return [{ kind: "text", text }];
 
@@ -49,8 +51,7 @@ export function highlightSegments(text: string, issues: AiIssue[]): HighlightSeg
   let segs: Seg[] = [{ t: text }];
 
   for (const phrase of phrases) {
-    const issue = issues.find((i) => i.phrase.trim() === phrase);
-    const level = issue?.level ?? "medium";
+    const level = levelByPhrase.get(phrase) ?? "medium";
     const next: Seg[] = [];
     for (const seg of segs) {
       if (seg.level) {

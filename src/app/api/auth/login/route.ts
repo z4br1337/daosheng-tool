@@ -35,7 +35,16 @@ export async function POST(req: NextRequest) {
     }
 
     const { studentNo, password } = parsed.data;
-    const user = await prisma.user.findUnique({ where: { studentNo } });
+    const user = await prisma.user.findUnique({
+      where: { studentNo },
+      select: {
+        id: true,
+        passwordHash: true,
+        approved: true,
+        role: true,
+        name: true,
+      },
+    });
     if (!user || !verifyPassword(password, user.passwordHash)) {
       return NextResponse.json({ error: "学号或密码错误" }, { status: 401 });
     }

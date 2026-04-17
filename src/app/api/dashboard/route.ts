@@ -40,9 +40,11 @@ const STOP = new Set([
   "学习",
 ]);
 
+const TOKEN_SPLIT = /[\s,，。；;、.!！?？'"“”‘’()\[\]{}:：\n\r\t]+/u;
+
 function tokenize(text: string): string[] {
   return text
-    .split(/[\s,，。；;、.!！?？'"“”‘’()\[\]{}:：\n\r\t]+/u)
+    .split(TOKEN_SPLIT)
     .map((t) => t.trim())
     .filter((t) => t.length >= 2 && !STOP.has(t));
 }

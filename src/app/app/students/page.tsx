@@ -11,7 +11,12 @@ export default async function StudentsPage() {
   const students = await prisma.student.findMany({
     where: { classId: ctx.classId },
     orderBy: { createdAt: "asc" },
-    include: { _count: { select: { records: true } } },
+    select: {
+      id: true,
+      name: true,
+      studentNo: true,
+      _count: { select: { records: true } },
+    },
   });
 
   return (

@@ -1,8 +1,20 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import { AttendancePie } from "@/components/AttendancePie";
 import { SimpleWordCloud } from "@/components/SimpleWordCloud";
+
+const AttendancePie = dynamic(
+  () => import("@/components/AttendancePie").then((m) => ({ default: m.AttendancePie })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex min-h-[240px] items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+        <p className="text-xs text-slate-500 dark:text-slate-400">加载图表…</p>
+      </div>
+    ),
+  },
+);
 
 type DashboardPayload = {
   totals: { records: number };

@@ -7,7 +7,16 @@ export async function GET() {
     const ctx = await readAuthContext();
     if (!ctx.ok) return NextResponse.json({ authenticated: false });
 
-    const user = await prisma.user.findUnique({ where: { id: ctx.userId } });
+    const user = await prisma.user.findUnique({
+      where: { id: ctx.userId },
+      select: {
+        id: true,
+        studentNo: true,
+        name: true,
+        role: true,
+        approved: true,
+      },
+    });
     if (!user) return NextResponse.json({ authenticated: false });
 
     return NextResponse.json({

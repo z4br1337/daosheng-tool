@@ -16,9 +16,30 @@ export default async function StudentDetailPage({ params }: PageProps) {
   const { id } = await params;
   const student = await prisma.student.findFirst({
     where: { id, classId: auth.classId },
-    include: {
-      records: { orderBy: { createdAt: "asc" } },
-      analyses: { orderBy: { createdAt: "desc" }, take: 1 },
+    select: {
+      id: true,
+      name: true,
+      studentNo: true,
+      records: {
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          role: true,
+          reporterName: true,
+          attendance: true,
+          learningConfusion: true,
+          learningAttitude: true,
+          learningNotes: true,
+          mentalState: true,
+          mentalNotes: true,
+          createdAt: true,
+        },
+      },
+      analyses: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { summary: true, issuesJson: true, createdAt: true },
+      },
     },
   });
 
