@@ -53,6 +53,6 @@ npm run dev
 
 1. 将仓库推送至 GitHub，在 Zeabur 绑定仓库并创建服务
 2. 在服务环境变量中填入上表所有必填项
-3. Zeabur 会自动检测 Dockerfile 并构建部署，暴露 8080 端口
+3. Zeabur 会自动检测 Dockerfile 并构建部署，暴露 8080 端口（启动时以 root 执行 `prisma db push`，再以非 root 运行应用，避免 `npx`/卷权限导致迁移失败）
 4. **持久卷**：推荐挂到例如 `/data` 并设置 `DATABASE_URL=file:/data/data.db`。若挂到 `/app/prisma`，空卷会遮住镜像内的 `schema.prisma`，启动脚本会自动改用镜像内副本执行 `db push`；请确保该目录对运行用户可写
 5. 如果希望使用 Zeabur 原生 Node 构建（而非 Docker），设置环境变量 `ZBPACK_IGNORE_DOCKERFILE=true`

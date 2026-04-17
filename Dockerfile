@@ -27,7 +27,7 @@ ENV PORT=8080
 ENV HOSTNAME=0.0.0.0
 # 使用绝对路径，避免 SQLite 在 standalone 进程内因工作目录导致无法打开库文件（Error code 14）
 ENV DATABASE_URL=file:/app/prisma/data.db
-RUN apk add --no-cache libc6-compat openssl
+RUN apk add --no-cache libc6-compat openssl su-exec
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
@@ -45,7 +45,7 @@ RUN mkdir -p /app/prisma /app/.image-prisma \
   && chmod +x /app/docker-entrypoint.sh \
   && chown -R nextjs:nodejs /app/prisma /app/.image-prisma /app/docker-entrypoint.sh
 
-USER nextjs
+# entrypoint 以 root 执行 db push（避免卷权限/npx 缓存问题），再以 su-exec 降为 nextjs 运行 Node
 EXPOSE 8080
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
