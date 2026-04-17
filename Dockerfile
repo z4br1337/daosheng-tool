@@ -27,7 +27,10 @@ ENV PORT=8080
 ENV HOSTNAME=0.0.0.0
 # 使用绝对路径，避免 SQLite 在 standalone 进程内因工作目录导致无法打开库文件（Error code 14）
 ENV DATABASE_URL=file:/app/prisma/data.db
-RUN apk add --no-cache libc6-compat openssl su-exec
+# 全局安装 Prisma CLI：本地 node_modules/prisma 在镜像中缺少 effect/c12 等 hoisted 依赖，
+# 直接 node .../prisma/build/index.js 会报 Cannot find module 'effect'
+RUN apk add --no-cache libc6-compat openssl su-exec \
+  && npm install -g prisma@6.19.3
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
@@ -39,7 +42,6 @@ COPY --from=builder /app/prisma/schema.prisma /app/.image-prisma/schema.prisma
 COPY scripts/docker-entrypoint.sh /app/docker-entrypoint.sh
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 
 RUN mkdir -p /app/prisma /app/.image-prisma \
   && chmod +x /app/docker-entrypoint.sh \

@@ -52,14 +52,13 @@ if [ ! -f "$SCHEMA" ]; then
   exit 1
 fi
 
-PRISMA_CLI="/app/node_modules/prisma/build/index.js"
-if [ ! -f "$PRISMA_CLI" ]; then
-  echo "FATAL: Prisma CLI 未找到: $PRISMA_CLI" >&2
+# 使用镜像构建阶段安装的 global prisma（含 effect 等完整依赖），勿用 /app/node_modules 内残缺 CLI
+if ! command -v prisma >/dev/null 2>&1; then
+  echo "FATAL: 未找到全局 prisma 命令" >&2
   exit 1
 fi
 
-# 不用 npx：Zeabur 等环境下 nextjs 用户可能没有可写 HOME/npm 缓存，或无法联网拉包
-if ! node "$PRISMA_CLI" db push --skip-generate --schema="$SCHEMA"; then
+if ! prisma db push --skip-generate --schema="$SCHEMA"; then
   echo "FATAL: prisma db push 失败（详见上方 Prisma 输出）。请检查 DATABASE_URL 目录权限与卷挂载。" >&2
   exit 1
 fi
