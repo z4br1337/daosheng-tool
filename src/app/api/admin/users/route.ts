@@ -1,3 +1,5 @@
+import { ADMIN_STUDENT_NO, ensureClassByName } from "@/lib/bootstrap";
+import { hashPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import { readAuthContext } from "@/lib/session";
 import { NextRequest, NextResponse } from "next/server";
@@ -48,6 +50,57 @@ const patchSchema = z.object({
   userId: z.string().min(1),
   approved: z.boolean(),
 });
+
+const inviteSchema = z.object({
+  studentNo: z.string().min(1).max(32),
+  className: z.string().min(1).max(64),
+});
+
+export async function POST(req: NextRequest) {
+  try {
+    const ctx = await readAuthContext();
+    if (!ctx.ok || ctx.role !== "ADMIN") {
+      return NextResponse.json({ error: "无权限" }, { status: 403 });
+    }
+
+    let json: unknown;
+    try {
+      json = await req.json();
+    } catch {
+      return NextResponse.json({ error: "请求体无效" }, { status: 400 });
+    }
+
+    const parsed = inviteSchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "参数错误" }, { status: 400 });
+    }
+
+    const target = await prisma.user.findUnique({
+      where: { studentNo: parsed.data.studentNo },
+      select: { id: true, studentNo: true, approved: true },
+    });
+    if (!target) {
+      return NextResponse.json({ error: "用户不存在，请先让对方完成注册" }, { status: 404 });
+    }
+
+    const cls = await ensureClassByName(parsed.data.className);
+    const passwordHash = hashPassword("123456");
+
+    await prisma.user.update({
+      where: { id: target.id },
+      data: {
+        approved: true,
+        classId: cls.id,
+        passwordHash,
+      },
+    });
+
+    return NextResponse.json({ ok: true, className: cls.name, tempPassword: "123456" });
+  } catch (e) {
+    console.error("[admin/users/invite]", e);
+    return NextResponse.json({ error: "服务器错误" }, { status: 500 });
+  }
+}
 
 export async function PATCH(req: NextRequest) {
   try {
