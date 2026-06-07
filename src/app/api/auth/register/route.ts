@@ -1,4 +1,4 @@
-import { ADMIN_STUDENT_NO, ensureClassByName, ensureDefaultClass } from "@/lib/bootstrap";
+import { ADMIN_STUDENT_NO, ensureDefaultClass } from "@/lib/bootstrap";
 import { hashPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import { clientIpFromRequest, rateLimit } from "@/lib/rate-limit";
@@ -10,8 +10,7 @@ const bodySchema = z.object({
   studentNo: z.string().min(1).max(32),
   name: z.string().min(1).max(64),
   password: z.string().min(6).max(128),
-  inviteCode: z.string().min(1).max(64).optional(),
-  className: z.string().min(1).max(64).optional(),
+  identity: z.enum(["MENTOR", "COMMITTEE"]),
 });
 
 function deriveInviteRole(inviterRole: "ADMIN" | "MENTOR" | "COMMITTEE" | "USER" | null): "MENTOR" | "COMMITTEE" | null {
@@ -43,7 +42,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "参数错误：学号和姓名不能为空，密码至少 6 位" }, { status: 400 });
     }
 
-    const { studentNo, name, password, inviteCode, className } = parsed.data;
+    const { studentNo, name, password, identity } = parsed.data;
 
     const existing = await prisma.user.findUnique({
       where: { studentNo },
@@ -53,34 +52,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "该学号已注册" }, { status: 409 });
     }
 
-    const inviter = inviteCode
-      ? await prisma.user.findUnique({
-          where: { studentNo: inviteCode },
-          select: { id: true, role: true, classId: true, approved: true },
-        })
-      : null;
-
-    if (inviteCode && !inviter) {
-      return NextResponse.json({ error: "邀请码对应的学号不存在" }, { status: 404 });
-    }
-    if (inviter && !inviter.approved) {
-      return NextResponse.json({ error: "邀请人账号未启用" }, { status: 403 });
-    }
-
     const isAdmin = studentNo === ADMIN_STUDENT_NO;
-    const inviteRole = isAdmin ? null : deriveInviteRole(inviter?.role ?? null);
     const approval = isAdmin;
 
-    const cls = isAdmin
-      ? await ensureDefaultClass()
-      : inviter?.classId
-        ? await prisma.class.findUnique({ where: { id: inviter.classId } })
-        : className
-          ? await ensureClassByName(className)
-          : null;
-
-    if (!isAdmin && !cls) {
-      return NextResponse.json({ error: "请先填写班级信息" }, { status: 400 });
+    const cls = isAdmin ? await ensureDefaultClass() : null;
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "请通过管理员或现有用户邀请完成注册，注册页仅用于创建账号基础信息" },
+        { status: 400 },
+      );
     }
 
     const user = await prisma.user.create({
@@ -88,9 +68,8 @@ export async function POST(req: NextRequest) {
         studentNo,
         name,
         passwordHash: hashPassword(password),
-        role: isAdmin ? "ADMIN" : "USER",
-        inviteRole,
-        approved: approval,
+        role: "ADMIN",
+        approved: true,
         classId: cls?.id ?? null,
       },
     });
@@ -103,10 +82,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      needApproval: !approval,
-      role: isAdmin ? "ADMIN" : inviteRole ?? "USER",
+      needApproval: false,
+      role: "ADMIN",
       className: cls?.name ?? null,
-      message: isAdmin ? "管理员账号创建成功" : "邀请注册成功",
+      message: "管理员账号创建成功",
     });
   } catch (e) {
     console.error("[register]", e);

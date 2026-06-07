@@ -54,6 +54,7 @@ const patchSchema = z.object({
 const inviteSchema = z.object({
   studentNo: z.string().min(1).max(32),
   className: z.string().min(1).max(64),
+  identity: z.enum(["MENTOR", "COMMITTEE"]),
 });
 
 export async function POST(req: NextRequest) {
@@ -92,6 +93,7 @@ export async function POST(req: NextRequest) {
         approved: true,
         classId: cls.id,
         passwordHash,
+        inviteRole: parsed.data.identity,
       },
     });
 
