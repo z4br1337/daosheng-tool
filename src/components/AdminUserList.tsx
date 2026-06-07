@@ -6,9 +6,10 @@ type UserItem = {
   id: string;
   studentNo: string;
   name: string;
-  role: "ADMIN" | "USER";
+  role: "ADMIN" | "MENTOR" | "COMMITTEE" | "USER";
   approved: boolean;
   createdAt: string;
+  class?: { id: string; name: string } | null;
 };
 
 export function AdminUserList() {
@@ -97,7 +98,9 @@ export function AdminUserList() {
                     </span>
                   ) : null}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">学号 {u.studentNo}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  学号 {u.studentNo}{u.class ? ` · ${u.class.name}` : ""}
+                </p>
               </div>
               {u.role !== "ADMIN" ? (
                 <button

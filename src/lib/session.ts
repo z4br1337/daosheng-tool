@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 export type AppSessionData = {
   userId?: string;
   classId?: string;
-  role?: "ADMIN" | "USER";
+  role?: "ADMIN" | "MENTOR" | "COMMITTEE" | "USER";
 };
 
 function sessionSecret(): string {
@@ -42,7 +42,7 @@ export async function getSession(): Promise<IronSession<AppSessionData>> {
 }
 
 export type AuthContext =
-  | { ok: true; userId: string; classId: string; role: "ADMIN" | "USER" }
+  | { ok: true; userId: string; classId: string; role: "ADMIN" | "USER" | "MENTOR" | "COMMITTEE" }
   | { ok: false };
 
 export async function readAuthContext(): Promise<AuthContext> {

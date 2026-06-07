@@ -19,10 +19,25 @@ export async function GET() {
         role: true,
         approved: true,
         createdAt: true,
+        classId: true,
       },
     });
 
-    return NextResponse.json({ users });
+    const classIds = Array.from(new Set(users.map((u) => u.classId).filter((id): id is string => Boolean(id))));
+    const classes = classIds.length
+      ? await prisma.class.findMany({
+          where: { id: { in: classIds } },
+          select: { id: true, name: true },
+        })
+      : [];
+    const classMap = new Map(classes.map((c) => [c.id, c]));
+
+    return NextResponse.json({
+      users: users.map((u) => ({
+        ...u,
+        class: u.classId ? classMap.get(u.classId) ?? null : null,
+      })),
+    });
   } catch (e) {
     console.error("[admin/users/list]", e);
     return NextResponse.json({ error: "服务器错误" }, { status: 500 });
@@ -64,7 +79,10 @@ export async function PATCH(req: NextRequest) {
 
     await prisma.user.update({
       where: { id: target.id },
-      data: { approved: parsed.data.approved },
+      data: {
+        approved: parsed.data.approved,
+        classId: target.classId ?? ctx.classId,
+      },
     });
 
     return NextResponse.json({ ok: true });

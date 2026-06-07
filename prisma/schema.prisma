@@ -12,20 +12,31 @@ enum UserRole {
   USER
 }
 
+enum InviteRole {
+  MENTOR
+  COMMITTEE
+}
+
 model User {
-  id           String   @id @default(cuid())
-  studentNo    String   @unique
+  id           String      @id @default(cuid())
+  studentNo    String      @unique
   name         String
   passwordHash String
-  role         UserRole @default(USER)
-  approved     Boolean  @default(false)
-  createdAt    DateTime @default(now())
+  role         UserRole    @default(USER)
+  inviteRole   InviteRole?
+  approved     Boolean     @default(false)
+  classId      String?
+  class        Class?      @relation(fields: [classId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
+
+  @@index([classId])
 }
 
 model Class {
   id        String    @id @default(cuid())
   name      String
   students  Student[]
+  users     User[]
   createdAt DateTime  @default(now())
 }
 

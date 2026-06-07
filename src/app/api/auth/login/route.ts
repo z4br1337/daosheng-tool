@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
         approved: true,
         role: true,
         name: true,
+        classId: true,
       },
     });
     if (!user || !verifyPassword(password, user.passwordHash)) {
@@ -53,14 +54,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "账号尚未通过管理员审批，请联系管理员" }, { status: 403 });
     }
 
-    const cls = await ensureDefaultClass();
+    const cls = user.classId ? await prisma.class.findUnique({ where: { id: user.classId } }) : await ensureDefaultClass();
     const session = await getSession();
     session.userId = user.id;
-    session.classId = cls.id;
+    session.classId = cls?.id;
     session.role = user.role;
     await session.save();
 
-    return NextResponse.json({ ok: true, role: user.role, name: user.name });
+    return NextResponse.json({ ok: true, role: user.role, name: user.name, className: cls?.name ?? null });
   } catch (e) {
     console.error("[login]", e);
     const msg = e instanceof Error ? e.message : "未知错误";

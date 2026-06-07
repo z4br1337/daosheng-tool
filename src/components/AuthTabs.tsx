@@ -105,6 +105,8 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
   const [studentNo, setStudentNo] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
+  const [className, setClassName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -116,7 +118,7 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentNo, name, password }),
+        body: JSON.stringify({ studentNo, name, password, inviteCode: inviteCode || undefined, className: className || undefined }),
       });
       let data: { error?: string; needApproval?: boolean; message?: string };
       try {
@@ -148,6 +150,8 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
       <InputField label="学号" value={studentNo} onChange={setStudentNo} placeholder="绑定你的学号" />
       <InputField label="姓名" value={name} onChange={setName} placeholder="你的真实姓名" />
       <InputField label="密码" value={password} onChange={setPassword} placeholder="至少 6 位" type="password" />
+      <InputField label="邀请学号（可选）" value={inviteCode} onChange={setInviteCode} placeholder="输入邀请人的学号" />
+      <InputField label="班级名称（无邀请时填写）" value={className} onChange={setClassName} placeholder="如：测试班级1班" />
       {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <button
         type="submit"
