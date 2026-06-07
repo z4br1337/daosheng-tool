@@ -105,7 +105,8 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
   const [studentNo, setStudentNo] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
-  const [identity, setIdentity] = useState<"MENTOR" | "COMMITTEE">("MENTOR");
+  const [className, setClassName] = useState("");
+  const [inviterStudentNo, setInviterStudentNo] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -117,26 +118,25 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentNo, name, password, identity }),
+        body: JSON.stringify({
+          studentNo,
+          name,
+          password,
+          className: className || undefined,
+          inviterStudentNo: inviterStudentNo || undefined,
+        }),
       });
-      let data: { error?: string; needApproval?: boolean; message?: string };
-      try {
-        data = await res.json();
-      } catch {
-        setError(`服务器返回异常 (${res.status})`);
-        return;
-      }
+      const data = (await res.json()) as { error?: string; needApproval?: boolean };
       if (!res.ok) {
         setError(data.error ?? "注册失败");
         return;
       }
       if (data.needApproval) {
         router.push("/pending");
-        router.refresh();
       } else {
         router.push("/app");
-        router.refresh();
       }
+      router.refresh();
     } catch {
       setError("网络连接失败，请检查网络后重试");
     } finally {
@@ -149,7 +149,8 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
       <InputField label="学号" value={studentNo} onChange={setStudentNo} placeholder="绑定你的学号" />
       <InputField label="姓名" value={name} onChange={setName} placeholder="你的真实姓名" />
       <InputField label="密码" value={password} onChange={setPassword} placeholder="至少 6 位" type="password" />
-      <IdentitySelect value={identity} onChange={setIdentity} />
+      <InputField label="班级名称" value={className} onChange={setClassName} placeholder="正常注册时填写已存在班级" />
+      <InputField label="邀请人学号（可选）" value={inviterStudentNo} onChange={setInviterStudentNo} placeholder="如有邀请则填写" />
       {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <button
         type="submit"
@@ -165,28 +166,6 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
         </button>
       </p>
     </form>
-  );
-}
-
-function IdentitySelect({
-  value,
-  onChange,
-}: {
-  value: "MENTOR" | "COMMITTEE";
-  onChange: (v: "MENTOR" | "COMMITTEE") => void;
-}) {
-  return (
-    <label className="block">
-      <span className="text-sm font-medium text-slate-600 dark:text-slate-300">身份</span>
-      <select
-        className="mt-1 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 shadow-sm outline-none ring-indigo-500/30 transition focus:border-indigo-500 focus:ring-4 sm:text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-        value={value}
-        onChange={(e) => onChange(e.target.value as "MENTOR" | "COMMITTEE")}
-      >
-        <option value="MENTOR">导生</option>
-        <option value="COMMITTEE">班委</option>
-      </select>
-    </label>
   );
 }
 
