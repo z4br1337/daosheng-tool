@@ -158,6 +158,7 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
           required
         >
           <option value="">请选择班级</option>
+          {classOptions.length === 0 ? <option value="" disabled>暂无班级，请先在用户管理页新增班级</option> : null}
           {classOptions.map((item) => (
             <option key={item.id} value={item.name}>
               {item.name}

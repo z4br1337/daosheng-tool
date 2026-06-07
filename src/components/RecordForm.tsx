@@ -9,7 +9,6 @@ export function RecordForm() {
   const router = useRouter();
   const [students, setStudents] = useState<StudentOption[]>([]);
   const [studentId, setStudentId] = useState("");
-  const [role, setRole] = useState<"MENTOR" | "COMMITTEE">("MENTOR");
   const [reporterName, setReporterName] = useState("");
   const [attendance, setAttendance] = useState("");
   const [learningConfusion, setLearningConfusion] = useState("");
@@ -43,7 +42,7 @@ export function RecordForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           studentId,
-          role,
+          role: "MENTOR",
           reporterName,
           attendance: attendance || null,
           learningConfusion: learningConfusion || null,
@@ -93,25 +92,6 @@ export function RecordForm() {
               </option>
             ))}
           </select>
-        </div>
-        <div>
-          <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">身份</label>
-          <div className="mt-1 flex gap-2">
-            <button
-              type="button"
-              onClick={() => setRole("MENTOR")}
-              className={`rounded-xl px-3 py-2 text-sm font-semibold ${role === "MENTOR" ? "bg-indigo-600 text-white" : "border border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"}`}
-            >
-              导生
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole("COMMITTEE")}
-              className={`rounded-xl px-3 py-2 text-sm font-semibold ${role === "COMMITTEE" ? "bg-indigo-600 text-white" : "border border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"}`}
-            >
-              班委
-            </button>
-          </div>
         </div>
       </div>
 
