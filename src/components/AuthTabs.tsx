@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Tab = "login" | "register";
 
@@ -64,13 +64,7 @@ function LoginForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ studentNo, password }),
       });
-      let data: { error?: string };
-      try {
-        data = await res.json();
-      } catch {
-        setError(`服务器返回异常 (${res.status})`);
-        return;
-      }
+      const data = (await res.json()) as { error?: string };
       if (!res.ok) {
         setError(data.error ?? "登录失败");
         return;
@@ -107,8 +101,18 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
   const [password, setPassword] = useState("");
   const [className, setClassName] = useState("");
   const [inviterStudentNo, setInviterStudentNo] = useState("");
+  const [classOptions, setClassOptions] = useState<{ id: string; name: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    void (async () => {
+      const res = await fetch("/api/classes");
+      if (!res.ok) return;
+      const data = (await res.json()) as { classes?: { id: string; name: string }[] };
+      setClassOptions(data.classes ?? []);
+    })();
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -131,11 +135,7 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
         setError(data.error ?? "注册失败");
         return;
       }
-      if (data.needApproval) {
-        router.push("/pending");
-      } else {
-        router.push("/app");
-      }
+      router.push(data.needApproval ? "/pending" : "/app");
       router.refresh();
     } catch {
       setError("网络连接失败，请检查网络后重试");
@@ -149,7 +149,22 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
       <InputField label="学号" value={studentNo} onChange={setStudentNo} placeholder="绑定你的学号" />
       <InputField label="姓名" value={name} onChange={setName} placeholder="你的真实姓名" />
       <InputField label="密码" value={password} onChange={setPassword} placeholder="至少 6 位" type="password" />
-      <InputField label="班级名称" value={className} onChange={setClassName} placeholder="正常注册时填写已存在班级" />
+      <label className="block">
+        <span className="text-sm font-medium text-slate-600 dark:text-slate-300">班级</span>
+        <select
+          className="mt-1 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 shadow-sm outline-none ring-indigo-500/30 transition focus:border-indigo-500 focus:ring-4 sm:text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          value={className}
+          onChange={(e) => setClassName(e.target.value)}
+          required
+        >
+          <option value="">请选择班级</option>
+          {classOptions.map((item) => (
+            <option key={item.id} value={item.name}>
+              {item.name}
+            </option>
+          ))}
+        </select>
+      </label>
       <InputField label="邀请人学号（可选）" value={inviterStudentNo} onChange={setInviterStudentNo} placeholder="如有邀请则填写" />
       {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <button

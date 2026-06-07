@@ -11,7 +11,6 @@ const bodySchema = z.object({
   name: z.string().min(1).max(64),
   password: z.string().min(6).max(128),
   className: z.string().min(1).max(64).optional(),
-  identity: z.enum(["MENTOR", "COMMITTEE"]).optional(),
   inviterStudentNo: z.string().min(1).max(32).optional(),
 });
 
@@ -35,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     const parsed = bodySchema.safeParse(json);
     if (!parsed.success) {
-      return NextResponse.json({ error: "参数错误：学号和姓名不能为空，密码至少 6 位" }, { status: 400 });
+      return NextResponse.json({ error: "参数错误：学号、姓名和密码不能为空" }, { status: 400 });
     }
 
     const { studentNo, name, password, className, inviterStudentNo } = parsed.data;
@@ -49,7 +48,6 @@ export async function POST(req: NextRequest) {
     }
 
     const isAdmin = studentNo === ADMIN_STUDENT_NO;
-
     const inviter = inviterStudentNo
       ? await prisma.user.findUnique({
           where: { studentNo: inviterStudentNo },
@@ -64,15 +62,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "邀请人账号未启用" }, { status: 403 });
     }
 
-    const cls = isAdmin ? await ensureDefaultClass() : className ? await prisma.class.findFirst({ where: { name: className } }) : null;
-    if (!isAdmin && inviterStudentNo) {
-      if (!cls) {
-        return NextResponse.json({ error: "指定班级不存在，请先在用户管理页新建班级" }, { status: 400 });
+    let classRecord: { id: string; name: string } | null = null;
+    if (isAdmin) {
+      classRecord = await ensureDefaultClass();
+    } else if (inviterStudentNo) {
+      if (!className) {
+        return NextResponse.json({ error: "邀请注册时必须指定已存在的班级名称" }, { status: 400 });
       }
-    }
-    if (!isAdmin && !inviterStudentNo) {
-      if (!cls) {
-        return NextResponse.json({ error: "正常注册时请填写已存在的班级名称" }, { status: 400 });
+      classRecord = await prisma.class.findFirst({ where: { name: className.trim() } });
+      if (!classRecord) {
+        return NextResponse.json({ error: "指定班级不存在，请先新增班级" }, { status: 400 });
+      }
+    } else {
+      if (!className) {
+        return NextResponse.json({ error: "正常注册时请填写所在班级名称" }, { status: 400 });
+      }
+      classRecord = await prisma.class.findFirst({ where: { name: className.trim() } });
+      if (!classRecord) {
+        return NextResponse.json({ error: "班级不存在，请先新增班级" }, { status: 400 });
       }
     }
 
@@ -83,13 +90,13 @@ export async function POST(req: NextRequest) {
         passwordHash: hashPassword(password),
         role: isAdmin ? "ADMIN" : "USER",
         approved: isAdmin || Boolean(inviterStudentNo),
-        classId: cls?.id ?? null,
+        classId: classRecord?.id ?? null,
       },
     });
 
     const session = await getSession();
     session.userId = user.id;
-    session.classId = cls?.id;
+    session.classId = classRecord?.id;
     session.role = user.role;
     await session.save();
 
@@ -97,7 +104,7 @@ export async function POST(req: NextRequest) {
       ok: true,
       needApproval: false,
       role: isAdmin ? "ADMIN" : "USER",
-      className: cls?.name ?? null,
+      className: classRecord?.name ?? null,
       message: isAdmin ? "管理员账号创建成功" : inviterStudentNo ? "邀请注册成功" : "注册成功",
     });
   } catch (e) {
