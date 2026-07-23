@@ -1,3 +1,4 @@
+import { ensurePresetClasses, PRESET_CLASS_NAMES } from "@/lib/bootstrap";
 import { prisma } from "@/lib/prisma";
 import { readAuthContext } from "@/lib/session";
 import { NextRequest, NextResponse } from "next/server";
@@ -5,14 +6,8 @@ import { z } from "zod";
 
 export async function GET() {
   try {
-    const ctx = await readAuthContext();
-    if (!ctx.ok) return NextResponse.json({ error: "未登录" }, { status: 401 });
-
-    const classes = await prisma.class.findMany({
-      orderBy: { createdAt: "desc" },
-      select: { id: true, name: true, createdAt: true },
-    });
-
+    await readAuthContext();
+    const classes = await ensurePresetClasses();
     return NextResponse.json({ classes });
   } catch (e) {
     console.error("[classes/list]", e);
@@ -50,7 +45,7 @@ export async function POST(req: NextRequest) {
     }
 
     const created = await prisma.class.create({ data: { name } });
-    return NextResponse.json({ ok: true, name: created.name, id: created.id });
+    return NextResponse.json({ ok: true, name: created.name, id: created.id, preset: PRESET_CLASS_NAMES.includes(name as (typeof PRESET_CLASS_NAMES)[number]) });
   } catch (e) {
     console.error("[classes/create]", e);
     return NextResponse.json({ error: "服务器错误" }, { status: 500 });
