@@ -1,18 +1,24 @@
 import type { AiAnalysisPayload } from "@/lib/types";
 
-type ArkUserContent = string | { type: "text"; text: string }[];
+type ArkInputContent =
+  | { type: "input_text"; text: string }
+  | { type: "input_image"; image_url: string };
 
-type ArkChatMessage = { role: "system" | "user" | "assistant"; content: string | ArkUserContent };
+type ArkResponseContent =
+  | string
+  | { type: "text"; text: string }[]
+  | { type: "input_text"; text: string }[];
 
-/** 方舟部分模型返回的 message.content 可能为字符串或多段（如 text + image_url） */
-function normalizeAssistantContent(content: unknown): string {
+function normalizeResponseContent(content: unknown): string {
   if (typeof content === "string") return content;
   if (!Array.isArray(content)) return "";
   const parts: string[] = [];
   for (const item of content) {
     if (!item || typeof item !== "object") continue;
     const o = item as Record<string, unknown>;
-    if (o.type === "text" && typeof o.text === "string") parts.push(o.text);
+    if ((o.type === "text" || o.type === "input_text") && typeof o.text === "string") {
+      parts.push(o.text);
+    }
   }
   return parts.join("\n");
 }
@@ -26,9 +32,8 @@ function stripJsonFence(text: string): string {
 }
 
 /**
- * 调用火山方舟 OpenAI 兼容接口 POST /chat/completions
- * 与 curl 示例一致：Authorization: Bearer <ARK_API_KEY>，body 含 model、messages。
- * 档案分析为纯文本，messages 使用字符串 content；多模态示例中的数组 content 由 normalizeAssistantContent 解析返回值。
+ * 调用火山方舟 Responses API。
+ * 新接口路径为 /responses，输入内容使用 input 数组（支持多模态）。
  */
 export async function analyzeStudentProfile(input: {
   studentName: string;
@@ -52,15 +57,9 @@ export async function analyzeStudentProfile(input: {
     `学生姓名：${input.studentName}\n\n档案原文：\n${input.dossierText}\n\n` +
     "请严格输出合法 JSON 对象，键为 summary 与 issues。";
 
-  const userContent: ArkUserContent =
-    process.env.ARK_USE_PARTS_USER_MESSAGE === "true" ? [{ type: "text", text: user }] : user;
+  const inputPayload: ArkInputContent[] = [{ type: "input_text", text: `${system}\n\n${user}` }];
 
-  const messages: ArkChatMessage[] = [
-    { role: "system", content: system },
-    { role: "user", content: userContent },
-  ];
-
-  const url = `${baseUrl}/chat/completions`;
+  const url = `${baseUrl}/responses`;
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -69,8 +68,12 @@ export async function analyzeStudentProfile(input: {
     },
     body: JSON.stringify({
       model,
-      temperature: 0.2,
-      messages,
+      input: [
+        {
+          role: "user",
+          content: inputPayload,
+        },
+      ],
     }),
   });
 
@@ -80,11 +83,19 @@ export async function analyzeStudentProfile(input: {
   }
 
   const data = (await res.json()) as {
+    output?: {
+      content?: ArkResponseContent;
+      text?: string;
+      [key: string]: unknown;
+    };
     choices?: { message?: { content?: unknown } }[];
+    content?: ArkResponseContent;
+    text?: string;
+    response?: unknown;
   };
-  const raw = data.choices?.[0]?.message?.content;
-  const text = normalizeAssistantContent(raw);
-  if (!text) throw new Error("豆包返回内容为空或无法解析为文本");
+  const raw = data.output?.content ?? data.content ?? data.output?.text ?? data.text;
+  const text = normalizeResponseContent(raw) || (typeof raw === "string" ? raw : "");
+  if (!text) throw new Error("方舟返回内容为空或无法解析为文本");
 
   let parsed: unknown;
   try {

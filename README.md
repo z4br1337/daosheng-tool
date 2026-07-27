@@ -19,7 +19,7 @@
 - Prisma + SQLite（可换 PostgreSQL）
 - Recharts
 - iron-session（Cookie 会话）
-- 火山方舟豆包 API（OpenAI 兼容格式）
+- 火山方舟 Responses API（支持多模态输入）
 
 ## 本地运行
 
@@ -48,7 +48,7 @@ npm run dev
 | `SESSION_SECRET` | 是 | iron-session 加密密钥，≥32 字符 |
 | `ARK_API_KEY` | 是 | 火山方舟 API Key（Bearer 令牌） |
 | `ARK_BASE_URL` | 否 | 方舟端点，默认 `https://ark.cn-beijing.volces.com/api/v3` |
-| `ARK_MODEL` | 是 | 模型名如 `doubao-seed-2-0-lite-260215` 或接入点 ID `ep-xxxx` |
+| `ARK_MODEL` | 是 | 模型名，如 `doubao-seed-2-1-pro-260628` 或接入点 ID `ep-xxxx` |
 
 ## Zeabur 部署
 
