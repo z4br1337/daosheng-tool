@@ -56,6 +56,33 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    await prisma.recordDraft.upsert({
+      where: { userId: ctx.userId },
+      update: {
+        classId: ctx.classId,
+        studentId: student.id,
+        reporterName: d.reporterName,
+        attendance: d.attendance ?? "",
+        learningConfusion: d.learningConfusion ?? "",
+        learningAttitude: d.learningAttitude ?? "",
+        learningNotes: d.learningNotes ?? "",
+        mentalState: d.mentalState ?? "",
+        mentalNotes: d.mentalNotes ?? "",
+      },
+      create: {
+        userId: ctx.userId,
+        classId: ctx.classId,
+        studentId: student.id,
+        reporterName: d.reporterName,
+        attendance: d.attendance ?? "",
+        learningConfusion: d.learningConfusion ?? "",
+        learningAttitude: d.learningAttitude ?? "",
+        learningNotes: d.learningNotes ?? "",
+        mentalState: d.mentalState ?? "",
+        mentalNotes: d.mentalNotes ?? "",
+      },
+    });
+
     return NextResponse.json({ ok: true, id: rec.id });
   } catch (e) {
     console.error("[records]", e);

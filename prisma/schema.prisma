@@ -48,6 +48,7 @@ model Student {
   name      String
   records   ProfileRecord[]
   analyses  AiAnalysis[]
+  drafts    RecordDraft[]
   createdAt DateTime        @default(now())
 
   @@unique([classId, studentNo])
@@ -73,6 +74,26 @@ model ProfileRecord {
   mentalNotes        String?
   createdAt          DateTime     @default(now())
 
+  @@index([studentId])
+}
+
+model RecordDraft {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  classId           String
+  studentId         String?
+  student           Student? @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  reporterName      String   @default("")
+  attendance        String   @default("")
+  learningConfusion String   @default("")
+  learningAttitude  String   @default("")
+  learningNotes     String   @default("")
+  mentalState       String   @default("")
+  mentalNotes       String   @default("")
+  updatedAt         DateTime @updatedAt
+  createdAt         DateTime @default(now())
+
+  @@index([classId])
   @@index([studentId])
 }
 

@@ -5,6 +5,72 @@ import { useEffect, useMemo, useState } from "react";
 
 type StudentOption = { id: string; name: string };
 
+type DraftRecord = {
+  studentId: string;
+  reporterName: string;
+  attendance: string;
+  learningConfusion: string;
+  learningAttitude: string;
+  learningNotes: string;
+  mentalState: string;
+  mentalNotes: string;
+};
+
+const emptyDraft = (): DraftRecord => ({
+  studentId: "",
+  reporterName: "",
+  attendance: "",
+  learningConfusion: "",
+  learningAttitude: "",
+  learningNotes: "",
+  mentalState: "",
+  mentalNotes: "",
+});
+
+function normalizeDraft(partial: Partial<DraftRecord> | null | undefined): DraftRecord {
+  return {
+    studentId: typeof partial?.studentId === "string" ? partial.studentId : "",
+    reporterName: typeof partial?.reporterName === "string" ? partial.reporterName : "",
+    attendance: typeof partial?.attendance === "string" ? partial.attendance : "",
+    learningConfusion: typeof partial?.learningConfusion === "string" ? partial.learningConfusion : "",
+    learningAttitude: typeof partial?.learningAttitude === "string" ? partial.learningAttitude : "",
+    learningNotes: typeof partial?.learningNotes === "string" ? partial.learningNotes : "",
+    mentalState: typeof partial?.mentalState === "string" ? partial.mentalState : "",
+    mentalNotes: typeof partial?.mentalNotes === "string" ? partial.mentalNotes : "",
+  };
+}
+
+async function loadServerDraft(): Promise<DraftRecord> {
+  try {
+    const res = await fetch("/api/records/draft");
+    if (!res.ok) return emptyDraft();
+    const data = (await res.json()) as { draft?: Partial<DraftRecord> | null };
+    return normalizeDraft(data.draft ?? null);
+  } catch {
+    return emptyDraft();
+  }
+}
+
+async function saveServerDraft(draft: DraftRecord): Promise<void> {
+  try {
+    await fetch("/api/records/draft", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(draft),
+    });
+  } catch {
+    // fall back to client-side state only; autosave remains best-effort
+  }
+}
+
+async function clearServerDraft(): Promise<void> {
+  try {
+    await fetch("/api/records/draft", { method: "DELETE" });
+  } catch {
+    // ignore
+  }
+}
+
 export function RecordForm() {
   const router = useRouter();
   const [students, setStudents] = useState<StudentOption[]>([]);
@@ -20,15 +86,46 @@ export function RecordForm() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+
     void (async () => {
-      const res = await fetch("/api/students");
-      if (!res.ok) return;
-      const data = (await res.json()) as { students: StudentOption[] };
-      setStudents(data.students ?? []);
-      if (data.students?.[0] && !studentId) setStudentId(data.students[0].id);
+      const [serverDraft, studentsRes] = await Promise.all([loadServerDraft(), fetch("/api/students")]);
+      if (!mounted) return;
+
+      setStudentId(serverDraft.studentId);
+      setReporterName(serverDraft.reporterName);
+      setAttendance(serverDraft.attendance);
+      setLearningConfusion(serverDraft.learningConfusion);
+      setLearningAttitude(serverDraft.learningAttitude);
+      setLearningNotes(serverDraft.learningNotes);
+      setMentalState(serverDraft.mentalState);
+      setMentalNotes(serverDraft.mentalNotes);
+
+      if (studentsRes.ok) {
+        const data = (await studentsRes.json()) as { students: StudentOption[] };
+        setStudents(data.students ?? []);
+        if (!serverDraft.studentId && data.students?.[0]) setStudentId(data.students[0].id);
+      }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    return () => {
+      mounted = false;
+    };
   }, []);
+
+  useEffect(() => {
+    const draft = {
+      studentId,
+      reporterName,
+      attendance,
+      learningConfusion,
+      learningAttitude,
+      learningNotes,
+      mentalState,
+      mentalNotes,
+    } satisfies DraftRecord;
+    void saveServerDraft(draft);
+  }, [studentId, reporterName, attendance, learningConfusion, learningAttitude, learningNotes, mentalState, mentalNotes]);
 
   const selectedName = useMemo(() => students.find((s) => s.id === studentId)?.name ?? "", [students, studentId]);
 
@@ -58,6 +155,7 @@ export function RecordForm() {
         return;
       }
       setMsg(`已保存到「${selectedName}」的档案`);
+      void clearServerDraft();
       setAttendance("");
       setLearningConfusion("");
       setLearningAttitude("");
@@ -147,6 +245,9 @@ export function RecordForm() {
       {students.length === 0 ? (
         <p className="text-sm text-amber-700 dark:text-amber-300">请先在「学生名单」导入学生。</p>
       ) : null}
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        草稿会自动保存在服务器中，重新登录后也能恢复；成功保存后草稿会自动清空。
+      </p>
     </form>
   );
 }
