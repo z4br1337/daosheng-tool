@@ -11,7 +11,6 @@ const bodySchema = z.object({
   name: z.string().min(1).max(64),
   password: z.string().min(6).max(128),
   className: z.string().min(1).max(64).optional(),
-  inviterStudentNo: z.string().min(1).max(32).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -37,7 +36,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "参数错误：学号、姓名和密码不能为空" }, { status: 400 });
     }
 
-    const { studentNo, name, password, className, inviterStudentNo } = parsed.data;
+    const { studentNo, name, password, className } = parsed.data;
 
     const existing = await prisma.user.findUnique({
       where: { studentNo },
@@ -48,34 +47,13 @@ export async function POST(req: NextRequest) {
     }
 
     const isAdmin = studentNo === ADMIN_STUDENT_NO;
-    const inviter = inviterStudentNo
-      ? await prisma.user.findUnique({
-          where: { studentNo: inviterStudentNo },
-          select: { id: true, role: true, classId: true, approved: true },
-        })
-      : null;
-
-    if (inviterStudentNo && !inviter) {
-      return NextResponse.json({ error: "邀请人学号不存在" }, { status: 404 });
-    }
-    if (inviter && !inviter.approved) {
-      return NextResponse.json({ error: "邀请人账号未启用" }, { status: 403 });
-    }
 
     let classRecord: { id: string; name: string } | null = null;
     if (isAdmin) {
       classRecord = await ensureDefaultClass();
-    } else if (inviterStudentNo) {
-      if (!className) {
-        return NextResponse.json({ error: "邀请注册时必须指定已存在的班级名称" }, { status: 400 });
-      }
-      classRecord = await prisma.class.findFirst({ where: { name: className.trim() } });
-      if (!classRecord) {
-        return NextResponse.json({ error: "指定班级不存在，请先新增班级" }, { status: 400 });
-      }
     } else {
       if (!className) {
-        return NextResponse.json({ error: "正常注册时请填写所在班级名称" }, { status: 400 });
+        return NextResponse.json({ error: "请填写所在班级名称" }, { status: 400 });
       }
       classRecord = await prisma.class.findFirst({ where: { name: className.trim() } });
       if (!classRecord) {
@@ -105,7 +83,7 @@ export async function POST(req: NextRequest) {
       needApproval: false,
       role: isAdmin ? "ADMIN" : "USER",
       className: classRecord?.name ?? null,
-      message: isAdmin ? "管理员账号创建成功" : inviterStudentNo ? "邀请注册成功" : "注册成功",
+      message: isAdmin ? "管理员账号创建成功" : "注册成功",
     });
   } catch (e) {
     console.error("[register]", e);

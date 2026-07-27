@@ -16,9 +16,6 @@ export function AdminUserList() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [operating, setOperating] = useState<string | null>(null);
-  const [inviteStudentNo, setInviteStudentNo] = useState("");
-  const [inviteClassName, setInviteClassName] = useState("");
-  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
   const [newClassName, setNewClassName] = useState("");
   const [classMessage, setClassMessage] = useState<string | null>(null);
 
@@ -63,38 +60,6 @@ export function AdminUserList() {
     }
   }
 
-  async function inviteUser(e: React.FormEvent) {
-    e.preventDefault();
-    setOperating("invite");
-    setInviteMessage(null);
-    if (!inviteStudentNo.trim() || !inviteClassName.trim()) {
-      setInviteMessage("请先填写学号和已存在的班级名称");
-      setOperating(null);
-      return;
-    }
-    try {
-      const res = await fetch("/api/admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          studentNo: inviteStudentNo,
-          className: inviteClassName,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setInviteMessage(data.error ?? "邀请失败");
-        return;
-      }
-      setInviteMessage(`邀请已完成，对方可直接使用学号登录`);
-      setInviteStudentNo("");
-      setInviteClassName("");
-      await load();
-    } finally {
-      setOperating(null);
-    }
-  }
-
   async function toggle(userId: string, approved: boolean) {
     setOperating(userId);
     try {
@@ -134,34 +99,10 @@ export function AdminUserList() {
               新增班级
             </button>
           </div>
-          {classMessage ? <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">{classMessage}</p> : null}
-        </div>
-        <div>
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-white">邀请用户</h2>
-          <form onSubmit={inviteUser} className="mt-3 grid gap-3 md:grid-cols-3">
-            <input
-              value={inviteStudentNo}
-              onChange={(e) => setInviteStudentNo(e.target.value)}
-              placeholder="邀请学号"
-              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-            />
-            <input
-              value={inviteClassName}
-              onChange={(e) => setInviteClassName(e.target.value)}
-              placeholder="班级名称（需先新增）"
-              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-            />
-            <button
-              type="submit"
-              className="rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-500"
-            >
-              邀请用户
-            </button>
-          </form>
-          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-            请先新增班级，再邀请用户进入对应班级；邀请完成后，对方可直接使用学号登录。
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            先创建班级，再让用户在注册页选择对应班级。
           </p>
-          {inviteMessage ? <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">{inviteMessage}</p> : null}
+          {classMessage ? <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">{classMessage}</p> : null}
         </div>
       </section>
 

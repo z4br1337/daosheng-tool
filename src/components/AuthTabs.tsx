@@ -100,7 +100,6 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [className, setClassName] = useState("");
-  const [inviterStudentNo, setInviterStudentNo] = useState("");
   const [classOptions, setClassOptions] = useState<{ id: string; name: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -127,7 +126,6 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
           name,
           password,
           className: className || undefined,
-          inviterStudentNo: inviterStudentNo || undefined,
         }),
       });
       const data = (await res.json()) as { error?: string; needApproval?: boolean };
@@ -146,9 +144,9 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <InputField label="学号" value={studentNo} onChange={setStudentNo} placeholder="绑定你的学号" />
-      <InputField label="姓名" value={name} onChange={setName} placeholder="你的真实姓名" />
-      <InputField label="密码" value={password} onChange={setPassword} placeholder="至少 6 位" type="password" />
+      <InputField label="学号" value={studentNo} onChange={setStudentNo} placeholder="请输入学号" />
+      <InputField label="姓名" value={name} onChange={setName} placeholder="请输入真实姓名" />
+      <InputField label="密码" value={password} onChange={setPassword} placeholder="至少 6 位，建议包含字母和数字" type="password" />
       <label className="block">
         <span className="text-sm font-medium text-slate-600 dark:text-slate-300">班级</span>
         <select
@@ -166,7 +164,6 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
           ))}
         </select>
       </label>
-      <InputField label="邀请人学号（可选）" value={inviterStudentNo} onChange={setInviterStudentNo} placeholder="如有邀请则填写" />
       {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <button
         type="submit"
