@@ -1,4 +1,4 @@
-import { ADMIN_STUDENT_NO, ensureClassByName } from "@/lib/bootstrap";
+import { ensureClassByName } from "@/lib/bootstrap";
 import { hashPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import { readAuthContext } from "@/lib/session";
@@ -54,7 +54,7 @@ const patchSchema = z.object({
 const inviteSchema = z.object({
   studentNo: z.string().min(1).max(32),
   className: z.string().min(1).max(64),
-  identity: z.enum(["MENTOR", "COMMITTEE"]),
+  identity: z.enum(["MENTOR", "COMMITTEE"]).default("MENTOR"),
 });
 
 export async function POST(req: NextRequest) {
