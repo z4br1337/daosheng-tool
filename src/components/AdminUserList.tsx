@@ -100,7 +100,7 @@ export function AdminUserList() {
             </button>
           </div>
           <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-            先创建班级，再让用户在注册页选择对应班级。
+            先创建班级，再让用户在注册页选择对应班级。无需再使用邀请流程。
           </p>
           {classMessage ? <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">{classMessage}</p> : null}
         </div>

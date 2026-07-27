@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         name,
         passwordHash: hashPassword(password),
         role: isAdmin ? "ADMIN" : "USER",
-        approved: isAdmin || Boolean(inviterStudentNo),
+        approved: isAdmin,
         classId: classRecord?.id ?? null,
       },
     });
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      needApproval: false,
+      needApproval: !isAdmin,
       role: isAdmin ? "ADMIN" : "USER",
       className: classRecord?.name ?? null,
       message: isAdmin ? "管理员账号创建成功" : "注册成功",

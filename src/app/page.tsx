@@ -18,7 +18,7 @@ export default async function Home() {
             <span className="mt-1 block text-indigo-200">数据可视化工具</span>
           </h1>
           <p className="max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">
-            记录学习与心理状态、调用豆包大模型识别风险并标红，以词云与饼图呈现班级整体趋势。注册时只需填写学号、姓名、密码和班级即可直接使用。
+            记录学习与心理状态、调用豆包大模型识别风险并标红，以词云与饼图呈现班级整体趋势。注册时只需填写学号、姓名、密码和班级即可直接使用，无需任何邀请步骤。
           </p>
         </section>
         <section className="w-full shrink-0 rounded-3xl border border-white/10 bg-white/95 p-6 text-slate-900 shadow-2xl shadow-indigo-900/40 backdrop-blur sm:p-8 lg:max-w-md dark:bg-slate-900/90 dark:text-slate-50">

@@ -172,10 +172,10 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
       >
         {loading ? "注册中…" : "注册"}
       </button>
-      <p className="text-center text-xs text-slate-500 dark:text-slate-400">
-        已有账号？
+      <p className="text-center text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+        注册后即可直接使用账号进入系统；如果你是管理员账号，会自动进入管理后台。
         <button type="button" onClick={onSwitch} className="ml-1 font-semibold text-indigo-600 dark:text-indigo-400">
-          去登录
+          已有账号去登录
         </button>
       </p>
     </form>
