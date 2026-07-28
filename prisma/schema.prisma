@@ -41,15 +41,16 @@ model Class {
 }
 
 model Student {
-  id        String          @id @default(cuid())
-  classId   String
-  class     Class           @relation(fields: [classId], references: [id], onDelete: Cascade)
-  studentNo String?
-  name      String
-  records   ProfileRecord[]
-  analyses  AiAnalysis[]
-  drafts    RecordDraft[]
-  createdAt DateTime        @default(now())
+  id           String          @id @default(cuid())
+  classId      String
+  class        Class           @relation(fields: [classId], references: [id], onDelete: Cascade)
+  studentNo    String?
+  name         String
+  records      ProfileRecord[]
+  analyses     AiAnalysis[]
+  drafts       RecordDraft[]
+  analysisJobs AnalysisJob[]
+  createdAt    DateTime        @default(now())
 
   @@unique([classId, studentNo])
   @@index([classId])
@@ -95,6 +96,23 @@ model RecordDraft {
 
   @@index([classId])
   @@index([studentId])
+}
+
+model AnalysisJob {
+  id               String   @id @default(cuid())
+  studentId        String
+  student          Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classId          String
+  requestedBy      String
+  status           String   @default("queued")
+  error            String?
+  resultSummary    String?
+  resultIssuesJson String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([classId])
 }
 
 model AiAnalysis {
