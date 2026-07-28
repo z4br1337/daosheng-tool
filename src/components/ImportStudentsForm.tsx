@@ -1,13 +1,32 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+const DRAFT_KEY = "student-viz-import-students-draft";
 
 export function ImportStudentsForm() {
   const router = useRouter();
   const [text, setText] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    try {
+      const draft = window.localStorage.getItem(DRAFT_KEY);
+      if (draft) setText(draft);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(DRAFT_KEY, text);
+    } catch {
+      // ignore
+    }
+  }, [text]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,6 +44,7 @@ export function ImportStudentsForm() {
         return;
       }
       setMsg(`成功创建 ${data.created ?? 0} 名学生档案`);
+      window.localStorage.removeItem(DRAFT_KEY);
       setText("");
       router.refresh();
     } catch {
